@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -37,7 +39,7 @@ func firstAPI(port int, wg *sync.WaitGroup, c1 chan string) {
 	}
 }
 
-func secondAPI(secret string, c2 chan string) {
+func secondAPI(secret string) string {
 	url := fmt.Sprintf("http://%s:%d", ip, secondPort)
 	fmt.Println(url)
 	url2 := fmt.Sprintf("http://%s:%d?secretKey=%s", ip, secondPort, secret)
@@ -48,9 +50,7 @@ func secondAPI(secret string, c2 chan string) {
 	})
 	responseBody := bytes.NewBuffer(postBody)*/
 
-	responseBody := []byte(`{
-		"secretKey": "ca32652906af8dd747e741cd3e960338138099b0615e62b4f23366cf65f52646"
-	}`)
+	responseBody := []byte(fmt.Sprintf("secretKey=%s", secret))
 
 	/*param := url.Values{}
 	param.Add("secretKey", secret)
@@ -74,7 +74,35 @@ func secondAPI(secret string, c2 chan string) {
 	fmt.Println(res["json"])*/
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(responseBody))
-	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(body))
+	return string(body)
+
+}
+
+func thirdAPI() {
+
+	content, err := ioutil.ReadFile("finalResult.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	res := strings.Split(string(content), "\n")
+	thirdPort := res[0]
+	key := res[1]
+	value := res[2]
+
+	url := fmt.Sprintf("http://%s:%s", ip, thirdPort)
+	responseBody := []byte(fmt.Sprintf("%s=%s", key, value))
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(responseBody))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -82,13 +110,13 @@ func secondAPI(secret string, c2 chan string) {
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
+	fmt.Println("The flag is : ", string(body))
 
 }
 
 func main() {
 	c1 := make(chan string)
-	c2 := make(chan string)
+	//c2 := make(chan string)
 
 	var wg sync.WaitGroup
 	for port := 3000; port <= 4000; port++ {
@@ -99,9 +127,14 @@ func main() {
 	string := <-c1
 	key := string[19:]
 	fmt.Println(key)
-	secondAPI(key, c2)
+	string2 := secondAPI(key)
 
-	string2 := <-c2
+	//string2 := <-c2
 	key2 := string2[20:]
 	fmt.Println(key2)
+
+	//Download du fichier manuellement ...
+
+	thirdAPI()
+
 }
