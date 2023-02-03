@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -82,35 +81,36 @@ func secondAPI(secret string) string {
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
 	return string(body)
 
 }
 
 func thirdAPI() {
 
-	content, err := ioutil.ReadFile("finalResult.txt")
+	/*content, err := ioutil.ReadFile("finalResult.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
-	res := strings.Split(string(content), "\n")
+	res := strings.Split(string(content), "\\n")
 	thirdPort := res[0]
 	key := res[1]
-	value := res[2]
+	value := res[2]*/
 
-	url := fmt.Sprintf("http://%s:%s", ip, thirdPort)
-	responseBody := []byte(fmt.Sprintf("%s=%s", key, value))
+	//url := fmt.Sprintf("http://%s:%s", ip, thirdPort)
+	url := fmt.Sprintf("http://%s:%s", ip, "3610")
+	//responseBody := []byte(fmt.Sprintf("%s=%s", key, value))
+	responseBody := []byte("finalKey=8116fdd3f12b6d7c4b136cbdaa3360a57eb4eb676ae63294450ee1f4f34b36f3")
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(responseBody))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	client2 := &http.Client{}
+	resp, err := client2.Do(req)
 	if err != nil {
 		return
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("The flag is : ", string(body))
+	fmt.Println("The flag is :", strings.Split(string(body), ":")[1][1:])
 
 }
 
